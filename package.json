@@ -1,0 +1,10 @@
+{
+  "name": "central-midtown-pod",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Cloudflare Worker serving the Central Midtown podcast site, RSS feed, and publishing exports.",
+  "scripts": {
+    "test": "node --test \"test/*.test.js\""
+  }
+}

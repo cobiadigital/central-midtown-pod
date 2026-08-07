@@ -1,0 +1,42 @@
+{
+  "title": "Central Midtown",
+  "subtitle": "Conversations with the artists, counselors, and organizers of Midtown Mobile.",
+  "description": "Central Midtown is a building in Midtown Mobile, Alabama that houses nonprofits, counselors, and working artists. Its position is that beauty is born in the margins. This show is a set of conversations with the people in that building and that neighborhood: what they make, who they serve, and why they stayed.\n\nEach episode is one long conversation, lightly edited, with links to the guest's work in the show notes. Every episode has a full transcript.",
+  "link": "https://podcast.centralmidtown.org",
+  "language": "en-us",
+  "copyright": "© 2026 Central Midtown",
+  "author": "Central Midtown",
+  "explicit": false,
+  "type": "episodic",
+  "guid": "57fd3b76-557e-4fd6-9edf-95575edc46b3",
+  "image": "https://podcast.centralmidtown.org/cover-3000.jpg",
+  "owner": {
+    "name": "Central Midtown",
+    "email": ""
+  },
+  "categories": [
+    {
+      "name": "Society & Culture",
+      "subcategory": "Places & Travel"
+    },
+    {
+      "name": "Arts"
+    }
+  ],
+  "platforms": [
+    { "name": "Apple Podcasts", "url": "" },
+    { "name": "Spotify", "url": "" },
+    { "name": "Amazon Music", "url": "" },
+    { "name": "YouTube", "url": "" },
+    { "name": "Podcast Index", "url": "" },
+    { "name": "Overcast", "url": "" },
+    { "name": "Pocket Casts", "url": "" }
+  ],
+  "provisional": [
+    "title",
+    "subtitle",
+    "description",
+    "copyright",
+    "categories"
+  ]
+}
