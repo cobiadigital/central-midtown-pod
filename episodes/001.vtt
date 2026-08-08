@@ -1,0 +1,10 @@
+WEBVTT
+
+1
+00:00:00.000 --> 00:00:06.000
+This is a placeholder transcript. Replace this file with the real .vtt export.
+
+2
+00:00:06.000 --> 00:00:14.000
+The Worker reads it for the transcript section on the episode page and serves it
+at /episode/1/transcript.vtt for the podcast:transcript feed tag.

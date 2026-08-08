@@ -1,0 +1,39 @@
+name: CI
+
+# Merging to main deploys straight to production through Workers Builds, so
+# every pull request has to be checked before it gets there. Nothing here
+# deploys anything or needs a secret.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    name: Tests, data check, Worker build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # No dependencies to install. Node's built-in test runner covers the
+      # gate, the feed, the export formats, and page rendering.
+      - name: Unit tests
+        run: node --test "test/*.test.js"
+
+      # The tests run against fixtures; this runs against the real
+      # data/show.json and episodes/*.json, which is where a typo lands.
+      # Prints the /health report into the build log either way.
+      - name: Data check
+        run: node scripts/check.mjs
+
+      # Catches a bad wrangler.toml or a broken import before Workers Builds
+      # hits it on main.
+      - name: Worker build
+        run: npx --yes wrangler@4 deploy --dry-run --outdir=dist

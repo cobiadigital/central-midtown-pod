@@ -1,0 +1,52 @@
+{
+  "number": 1,
+  "season": 1,
+  "slug": "template-replace-me",
+  "title": "TEMPLATE — replace this file with episode 1",
+  "guid": "d9409ae3-38f4-41e8-a147-1ea45fdf4746",
+  "pubDate": "2026-08-12T09:00:00-05:00",
+  "explicit": false,
+  "episodeType": "full",
+  "shortDescription": "Every field in this file is a placeholder. The gate holds it out of the feed until the real values are in.",
+  "showNotes": "This file is the shape of an episode record, committed so there is something to copy.\n\nIt is deliberately failing the publishing gate — `audio.bytes` is 0, `audio.durationSeconds` is 0, and the guest release is unsigned — so it can never reach the feed by accident. The /health route lists exactly which fields are holding it back.\n\nTo publish the real episode 1:\n\n- Upload the MP3 to R2 and copy the exact byte size off the object listing\n- Fill in `audio.url`, `audio.bytes`, and `audio.durationSeconds`\n- Replace the title, descriptions, chapters, and guest block\n- Set `releaseSigned` to true only once the signed release is actually on file\n- Replace `episodes/001.vtt` with the real transcript",
+  "pullQuote": "Replace this with one sentence worth sharing.",
+  "keywords": ["Mobile Alabama", "Midtown", "arts", "nonprofit"],
+  "image": "",
+  "audio": {
+    "url": "https://media.podcast.centralmidtown.org/001.mp3",
+    "bytes": 0,
+    "durationSeconds": 0,
+    "mimeType": "audio/mpeg"
+  },
+  "video": {
+    "youtubeId": "",
+    "thumbnailAlt": ""
+  },
+  "chapters": [
+    { "start": 0, "title": "Intro" },
+    { "start": 120, "title": "First real chapter" },
+    { "start": 1800, "title": "Where to find the guest's work" }
+  ],
+  "guests": [
+    {
+      "name": "Guest Name",
+      "pronouns": "they/them",
+      "bio": "One paragraph. Who they are, what they make, why it matters here.",
+      "headshot": "",
+      "headshotAlt": "",
+      "links": [
+        { "label": "Artist page", "url": "https://example.org" }
+      ],
+      "releaseSigned": false
+    }
+  ],
+  "credits": {
+    "host": "",
+    "editor": "",
+    "music": ""
+  },
+  "cta": {
+    "label": "Support Central Midtown",
+    "url": "https://centralmidtown.org"
+  }
+}

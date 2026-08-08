@@ -1,0 +1,24 @@
+name = "central-midtown-podcast"
+main = "src/index.js"
+compatibility_date = "2026-08-01"
+
+# Anything in /public is served directly by Cloudflare. Requests that do not
+# match a file there fall through to the Worker.
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+# Transcripts are imported as strings so they can be bundled and served at
+# /episode/{n}/transcript.vtt. `fallthrough` keeps Wrangler's default module
+# rules (for .txt, .html, and friends) in place.
+[[rules]]
+type = "Text"
+globs = ["**/*.vtt"]
+fallthrough = true
+
+[observability]
+enabled = true
+
+# No secrets and no bindings beyond static assets: this Worker only reads.
+# If an authenticated route is ever added, its credentials go in the dashboard
+# under Settings -> Variables and Secrets, never in this file.
