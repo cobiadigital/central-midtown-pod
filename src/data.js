@@ -419,12 +419,26 @@ export function buildLibrary({ show: rawShow, registry = [], now = Date.now() } 
   };
 }
 
-/** Canonical site origin, taken from show.json but overridable by the request host. */
-export function siteOrigin(show, requestUrl) {
+/**
+ * Work out which hostname to write into links.
+ *
+ * On the production domain these are the same thing. On a workers.dev URL or a
+ * pull request preview they are not: links have to point at the host actually
+ * being browsed, or nothing on the preview is clickable — but the canonical tag
+ * must still point at production so a preview never competes with the real site
+ * in search results, and previews are marked noindex outright.
+ */
+export function resolveSite(show, requestUrl) {
   const configured = show && show.link ? show.link.replace(/\/+$/, '') : '';
-  if (configured) return configured;
-  if (requestUrl) return new URL(requestUrl).origin;
-  return SITE_ORIGIN_FALLBACK;
+  const requested = requestUrl ? new URL(requestUrl).origin : '';
+  const canonicalOrigin = configured || requested || SITE_ORIGIN_FALLBACK;
+  const isPreview = Boolean(configured && requested && configured !== requested);
+
+  return {
+    origin: isPreview ? requested : canonicalOrigin,
+    canonicalOrigin,
+    isPreview,
+  };
 }
 
 export function episodePath(episode) {

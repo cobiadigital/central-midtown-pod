@@ -124,6 +124,7 @@ Set these once, in the Cloudflare dashboard under
 | Production branch | `main` |
 | Build command | *(leave empty)* |
 | Deploy command | `npx wrangler deploy` |
+| **Non-production branch deploy command** | **`npx wrangler versions upload`** |
 | Root directory | `/` |
 | Build for non-production branches | **On** |
 
@@ -131,12 +132,32 @@ The build command is deliberately empty. There is nothing to compile, and
 `package.json` has no dependencies and no `build` script, so anything here would
 only be a way for the deploy to fail.
 
-With non-production branch builds on, every pull request gets its own preview
-URL. Open `/health` on that preview before merging — it is the fastest way to
-confirm a new episode is complete.
+**Check the non-production deploy command.** `wrangler versions upload` is the
+default, and it is the one you want: it publishes a *version* with its own
+preview URL and leaves production untouched. If it is ever set to
+`wrangler deploy` instead, every push to every branch goes live on the
+production domain — a half-finished episode on a work-in-progress branch would
+be the public site, and the pull request stops being a review step.
 
 Merging to `main` triggers the production deploy. It takes a minute or two, and
 directories pick the feed up within 15 minutes to a few hours after that.
+
+### Preview URLs
+
+The Worker notices when it is being served from anywhere other than
+`link` in `data/show.json` — a preview version, or the `workers.dev` URL — and
+adapts: navigation links point at the host you are actually browsing so the
+preview is usable, while the canonical tag still points at the production
+domain and every response carries `noindex`. A preview can never compete with
+the real site in search results, and neither can an episode the gate is holding
+back.
+
+Open `/health` on the preview URL before merging. It names the host it is
+serving, and it is the fastest way to confirm a new episode is complete.
+
+Once `podcast.centralmidtown.org` is attached to the Worker, set
+`workers_dev = false` in `wrangler.toml` so there is exactly one public copy of
+the site and one hostname advertising the feed.
 
 ### What runs before a merge
 

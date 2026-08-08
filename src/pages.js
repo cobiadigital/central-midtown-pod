@@ -18,7 +18,16 @@ import { episodePath } from './data.js';
 // Shell
 // ---------------------------------------------------------------------------
 
-function layout({ title, description, canonical, origin, body, jsonLd = null, bodyClass = '' }) {
+function layout({
+  title,
+  description,
+  canonical,
+  origin,
+  body,
+  jsonLd = null,
+  bodyClass = '',
+  noindex = false,
+}) {
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -26,7 +35,7 @@ function layout({ title, description, canonical, origin, body, jsonLd = null, bo
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escapeHtml(title)}</title>
 <meta name="description" content="${escapeHtml(description)}">
-<link rel="canonical" href="${escapeHtml(canonical)}">
+${noindex ? '<meta name="robots" content="noindex, nofollow">\n' : ''}<link rel="canonical" href="${escapeHtml(canonical)}">
 <link rel="alternate" type="application/rss+xml" title="RSS" href="${escapeHtml(origin)}/feed.xml">
 <link rel="stylesheet" href="/styles.css">
 <meta property="og:type" content="website">
@@ -268,7 +277,13 @@ function episodeJsonLd({ show, episode, origin }) {
   return data;
 }
 
-export function renderEpisodePage({ show, episode, origin }) {
+export function renderEpisodePage({
+  show,
+  episode,
+  origin,
+  canonicalOrigin = origin,
+  isPreview = false,
+}) {
   const url = `${origin}${episodePath(episode)}`;
   const description = episode.shortDescription || markdownToSingleLine(episode.showNotes, 200);
 
@@ -358,11 +373,14 @@ ${siteFooter(show)}
   return layout({
     title: `${episode.title} — ${show.title}`,
     description,
-    canonical: url,
+    canonical: `${canonicalOrigin}${episodePath(episode)}`,
     origin,
     body,
     bodyClass: 'page-episode',
-    jsonLd: episodeJsonLd({ show, episode, origin }),
+    // A preview host and a not-yet-published episode are both things that
+    // should never turn up in a search result.
+    noindex: isPreview || !episode.gate.published,
+    jsonLd: episodeJsonLd({ show, episode, origin: canonicalOrigin }),
   });
 }
 
@@ -370,7 +388,7 @@ ${siteFooter(show)}
 // Home
 // ---------------------------------------------------------------------------
 
-export function renderHomePage({ show, episodes, origin }) {
+export function renderHomePage({ show, episodes, origin, canonicalOrigin = origin, isPreview = false }) {
   const cards = episodes
     .map((episode) => {
       const description =
@@ -425,16 +443,17 @@ ${siteFooter(show)}`;
   return layout({
     title: show.title,
     description: show.subtitle || markdownToSingleLine(show.description, 200),
-    canonical: origin,
+    canonical: canonicalOrigin,
     origin,
     body,
     bodyClass: 'page-home',
+    noindex: isPreview,
     jsonLd: {
       '@context': 'https://schema.org',
       '@type': 'PodcastSeries',
       name: show.title,
-      url: origin,
-      webFeed: `${origin}/feed.xml`,
+      url: canonicalOrigin,
+      webFeed: `${canonicalOrigin}/feed.xml`,
       description: markdownToSingleLine(show.description, 500),
       ...(show.image ? { image: show.image } : {}),
     },
@@ -445,7 +464,7 @@ ${siteFooter(show)}`;
 // Subscribe
 // ---------------------------------------------------------------------------
 
-export function renderSubscribePage({ show, origin }) {
+export function renderSubscribePage({ show, origin, canonicalOrigin = origin, isPreview = false }) {
   const body = `${siteHeader(show)}
 <main id="main" class="subscribe-page">
   <h1>Subscribe</h1>
@@ -462,10 +481,11 @@ ${siteFooter(show)}`;
   return layout({
     title: `Subscribe — ${show.title}`,
     description: `Every place to listen to ${show.title}.`,
-    canonical: `${origin}/subscribe`,
+    canonical: `${canonicalOrigin}/subscribe`,
     origin,
     body,
     bodyClass: 'page-subscribe',
+    noindex: isPreview,
   });
 }
 
@@ -500,5 +520,6 @@ ${siteFooter(show)}`;
     origin,
     body,
     bodyClass: 'page-404',
+    noindex: true,
   });
 }

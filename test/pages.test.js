@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { buildLibrary, normalizeShow, auditShow } from '../src/data.js';
+import { buildLibrary, normalizeShow, auditShow, resolveSite } from '../src/data.js';
 import { renderEpisodePage, renderHomePage, renderNotFound, vttToParagraphs } from '../src/pages.js';
 import { renderHealth, renderFatalConfigError } from '../src/health.js';
 import * as fx from './fixtures.js';
@@ -126,6 +126,67 @@ test('health reports a clean bill when nothing is wrong', () => {
   const lib = libraryOf(fx.valid);
   const text = renderHealth({ library: lib, origin: ORIGIN, now: fx.NOW });
   assert.ok(text.includes('No blocking problems'));
+});
+
+test('the production domain is not treated as a preview', () => {
+  const site = resolveSite(normalizeShow(fx.show), `${ORIGIN}/episode/2`);
+  assert.equal(site.isPreview, false);
+  assert.equal(site.origin, ORIGIN);
+  assert.equal(site.canonicalOrigin, ORIGIN);
+});
+
+test('a workers.dev or PR preview host links to itself but canonicalises to production', () => {
+  const preview = 'https://central-midtown-pod.info-8e9.workers.dev';
+  const site = resolveSite(normalizeShow(fx.show), `${preview}/episode/2`);
+
+  assert.equal(site.isPreview, true);
+  // Links have to point at the host being browsed or nothing is clickable.
+  assert.equal(site.origin, preview);
+  // The canonical tag must still point at the real site.
+  assert.equal(site.canonicalOrigin, ORIGIN);
+
+  const lib = libraryOf(fx.valid);
+  const html = renderEpisodePage({
+    show: lib.show,
+    episode: lib.byNumber(2),
+    origin: site.origin,
+    canonicalOrigin: site.canonicalOrigin,
+    isPreview: site.isPreview,
+  });
+
+  assert.ok(html.includes(`<link rel="canonical" href="${ORIGIN}/episode/2">`));
+  assert.ok(html.includes('<meta name="robots" content="noindex, nofollow">'));
+  assert.ok(html.includes(`<audio id="episode-audio"`));
+});
+
+test('a published episode on the production domain is indexable', () => {
+  const lib = libraryOf(fx.valid);
+  const html = renderEpisodePage({ show: lib.show, episode: lib.byNumber(2), origin: ORIGIN });
+  assert.ok(!html.includes('name="robots"'));
+});
+
+test('a held-back episode is never indexable, even on production', () => {
+  const lib = libraryOf(fx.noAudioBytes);
+  const html = renderEpisodePage({
+    show: lib.show,
+    episode: lib.byNumber(fx.noAudioBytes.number),
+    origin: ORIGIN,
+  });
+  assert.ok(html.includes('<meta name="robots" content="noindex, nofollow">'));
+});
+
+test('health names the preview host and the production one it canonicalises to', () => {
+  const lib = libraryOf(fx.valid);
+  const preview = 'https://central-midtown-pod.info-8e9.workers.dev';
+  const text = renderHealth({
+    library: lib,
+    origin: preview,
+    now: fx.NOW,
+    isPreview: true,
+    canonicalOrigin: ORIGIN,
+  });
+  assert.ok(text.includes('PREVIEW — not the production domain'));
+  assert.ok(text.includes(`Production:     ${ORIGIN}`));
 });
 
 test('a missing show.json produces a legible error, not a stack trace', () => {

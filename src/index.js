@@ -6,7 +6,7 @@
 import showData from '../data/show.json';
 import registry from '../episodes/registry.js';
 
-import { buildLibrary, siteOrigin, episodePath } from './data.js';
+import { buildLibrary, resolveSite, episodePath } from './data.js';
 import { renderFeed, renderChapters, FEED_CONTENT_TYPE } from './feed.js';
 import { renderYouTube, renderSocial } from './exports.js';
 import { renderHealth, renderFatalConfigError } from './health.js';
@@ -21,15 +21,18 @@ import { parseEpisodeNumber } from './util.js';
 const HTML = 'text/html; charset=utf-8';
 const TEXT = 'text/plain; charset=utf-8';
 
-function respond(body, { status = 200, type = HTML, cache = 'public, max-age=300' } = {}) {
-  return new Response(body, {
-    status,
-    headers: {
-      'content-type': type,
-      'cache-control': cache,
-      'x-content-type-options': 'nosniff',
-    },
-  });
+function respond(body, { status = 200, type = HTML, cache = 'public, max-age=300', noindex = false } = {}) {
+  const headers = {
+    'content-type': type,
+    'cache-control': cache,
+    'x-content-type-options': 'nosniff',
+  };
+
+  // Preview and workers.dev hosts serve the whole site, feed included. Keep
+  // every copy of it out of search results so only the real domain ranks.
+  if (noindex) headers['x-robots-tag'] = 'noindex, nofollow';
+
+  return new Response(body, { status, headers });
 }
 
 /**
@@ -75,7 +78,7 @@ export default {
     const now = Date.now();
     const library = buildLibrary({ show: showData, registry, now });
     const { show } = library;
-    const origin = siteOrigin(show, request.url);
+    const { origin, canonicalOrigin, isPreview } = resolveSite(show, request.url);
 
     // ------------------------------------------------------------------
     // /health always works, even when the show config is unusable — it is
@@ -83,9 +86,10 @@ export default {
     // ------------------------------------------------------------------
     if (path === '/health') {
       const assetProblems = await checkAssets(env, show, origin);
-      return respond(renderHealth({ library, origin, now, assetProblems }), {
+      return respond(renderHealth({ library, origin, now, assetProblems, isPreview, canonicalOrigin }), {
         type: TEXT,
         cache: 'no-store',
+        noindex: true,
       });
     }
 
@@ -101,7 +105,10 @@ export default {
     }
 
     if (path === '/') {
-      return respond(renderHomePage({ show, episodes: library.published, origin }));
+      return respond(
+        renderHomePage({ show, episodes: library.published, origin, canonicalOrigin, isPreview }),
+        { noindex: isPreview },
+      );
     }
 
     if (path === '/feed.xml') {
@@ -112,11 +119,13 @@ export default {
         feedUrl: `${origin}/feed.xml`,
         now,
       });
-      return respond(xml, { type: FEED_CONTENT_TYPE });
+      return respond(xml, { type: FEED_CONTENT_TYPE, noindex: isPreview });
     }
 
     if (path === '/subscribe') {
-      return respond(renderSubscribePage({ show, origin }));
+      return respond(renderSubscribePage({ show, origin, canonicalOrigin, isPreview }), {
+        noindex: isPreview,
+      });
     }
 
     // ------------------------------------------------------------------
@@ -131,13 +140,15 @@ export default {
         return respond(renderNotFound({ show, origin, episodes: library.published }), {
           status: 404,
           cache: 'no-store',
+          noindex: true,
         });
       }
 
       switch (episodeMatch[2]) {
         case undefined:
-          return respond(renderEpisodePage({ show, episode, origin }), {
+          return respond(renderEpisodePage({ show, episode, origin, canonicalOrigin, isPreview }), {
             cache: episode.gate.published ? 'public, max-age=300' : 'no-store',
+            noindex: isPreview || !episode.gate.published,
           });
 
         case 'youtube.txt':
@@ -186,6 +197,7 @@ export default {
     return respond(renderNotFound({ show, origin, episodes: library.published }), {
       status: 404,
       cache: 'no-store',
+      noindex: true,
     });
   },
 };
