@@ -1,6 +1,20 @@
-name = "central-midtown-podcast"
+# Must match the Worker name in the Cloudflare dashboard, or Workers Builds
+# overrides it on every deploy and opens a pull request to correct this file.
+name = "central-midtown-pod"
 main = "src/index.js"
 compatibility_date = "2026-08-01"
+
+# Both of these default to on. Set explicitly so the deploy log stays quiet and
+# the intent is recorded rather than inherited.
+#
+# workers_dev keeps https://central-midtown-pod.<subdomain>.workers.dev alive.
+# Once podcast.centralmidtown.org is attached to the Worker, flip this to false:
+# a second public copy of the site is a duplicate-content problem, and the feed
+# should only ever be advertised at one hostname.
+workers_dev = true
+
+# preview_urls is what gives each pull request build its own URL to check.
+preview_urls = true
 
 # Anything in /public is served directly by Cloudflare. Requests that do not
 # match a file there fall through to the Worker.

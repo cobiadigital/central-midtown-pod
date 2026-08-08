@@ -17,7 +17,14 @@ function section(title, lines) {
  * `assetProblems` comes from the caller because checking static assets needs a
  * subrequest, which does not belong in a pure function.
  */
-export function renderHealth({ library, origin, now = Date.now(), assetProblems = [] }) {
+export function renderHealth({
+  library,
+  origin,
+  now = Date.now(),
+  assetProblems = [],
+  isPreview = false,
+  canonicalOrigin = origin,
+}) {
   const { show, showProblems, structural, all, published } = library;
 
   const blocking = showProblems.filter((problem) => problem.severity === 'blocking');
@@ -28,7 +35,8 @@ export function renderHealth({ library, origin, now = Date.now(), assetProblems 
 
   out.push(section(`CENTRAL MIDTOWN PODCAST — HEALTH`, [
     `Checked:        ${new Date(now).toUTCString()}`,
-    `Origin:         ${origin}`,
+    `Origin:         ${origin}${isPreview ? '   (PREVIEW — not the production domain)' : ''}`,
+    ...(isPreview ? [`Production:     ${canonicalOrigin}   (what canonical links point at)`] : []),
     `Feed:           ${origin}/feed.xml`,
     `Episodes:       ${all.length} registered, ${published.length} in the feed, ${gated.length} held back`,
     `Show config:    ${blocking.length} blocking, ${warnings.length} warning${warnings.length === 1 ? '' : 's'}`,
