@@ -102,16 +102,66 @@ added, its credentials go in the Cloudflare dashboard under
 
 ---
 
-## Cloudflare setup
+## Deploying
 
-- **Worker**: connected to this repo via Workers Builds. Commits to `main` deploy
-  to production; pull requests get preview deploys.
+GitHub is the source of truth. Cloudflare pulls from it — nothing is ever
+uploaded by hand.
+
+```
+branch  ──▶  pull request  ──▶  CI green  ──▶  merge to main  ──▶  production
+                    │
+                    └──▶  Workers Builds preview URL
+```
+
+### Workers Builds settings
+
+Set these once, in the Cloudflare dashboard under
+**Workers & Pages → central-midtown-podcast → Settings → Builds**.
+
+| Setting | Value |
+|---|---|
+| Git repository | `cobiadigital/central-midtown-pod` |
+| Production branch | `main` |
+| Build command | *(leave empty)* |
+| Deploy command | `npx wrangler deploy` |
+| Root directory | `/` |
+| Build for non-production branches | **On** |
+
+The build command is deliberately empty. There is nothing to compile, and
+`package.json` has no dependencies and no `build` script, so anything here would
+only be a way for the deploy to fail.
+
+With non-production branch builds on, every pull request gets its own preview
+URL. Open `/health` on that preview before merging — it is the fastest way to
+confirm a new episode is complete.
+
+Merging to `main` triggers the production deploy. It takes a minute or two, and
+directories pick the feed up within 15 minutes to a few hours after that.
+
+### What runs before a merge
+
+`.github/workflows/ci.yml` runs on every pull request and needs no secrets:
+
+1. `node --test` — the unit tests
+2. `node scripts/check.mjs` — validates the **real** `data/show.json` and
+   `episodes/*.json`, confirms the registry and the episodes directory agree,
+   renders every route, and prints the `/health` report into the build log
+3. `npx wrangler deploy --dry-run` — catches a broken import or a bad
+   `wrangler.toml` before Workers Builds meets it on `main`
+
+A trailing comma in an episode JSON — the most likely thing to go wrong when
+editing from a phone — fails step 2 with the file name and line number, on the
+pull request, before anything deploys.
+
+### The rest of the Cloudflare setup
+
 - **Custom domain**: `podcast.centralmidtown.org` on the Worker
-  (Worker → Settings → Domains & Routes).
+  (Worker → Settings → Domains & Routes). DNS is automatic, the zone is already
+  on Cloudflare.
 - **R2**: bucket `cm-podcast-audio` with the custom domain
   `media.podcast.centralmidtown.org`, which makes objects publicly readable over
   HTTPS with no egress cost.
-- **Static assets**: `/public` is uploaded with each deploy and served from
+- **Static assets**: `/public` uploads with each deploy and is served from
   Cloudflare's edge, configured under `[assets]` in `wrangler.toml`.
 
 ---
@@ -122,6 +172,7 @@ Optional — the phone workflow never needs this.
 
 ```
 npm test                 # 40 unit tests, no dependencies, Node's built-in runner
+npm run check            # validate the real repo data, print the health report
 npx wrangler dev         # local Worker at http://127.0.0.1:8787
 npx wrangler deploy --dry-run
 ```

@@ -5,6 +5,7 @@
   "type": "module",
   "description": "Cloudflare Worker serving the Central Midtown podcast site, RSS feed, and publishing exports.",
   "scripts": {
-    "test": "node --test \"test/*.test.js\""
+    "test": "node --test \"test/*.test.js\"",
+    "check": "node scripts/check.mjs"
   }
 }
